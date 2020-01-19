@@ -1,30 +1,32 @@
 import React, { Component } from "react";
-import axios from 'axios';
+import http from './services/httpservice';
+import config from './config.json'
+import {ToastContainer} from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import "./App.css";
 
-const endPoint = 'http://jsonplaceholder.typicode.com/posts';
 class App extends Component {
   state = {
     posts: []
   };
 
   async componentDidMount() {
-    const { data } = await axios.get(endPoint);
+    const { data } = await http.get(config.apiEndpoint);
 
     this.setState({posts: data})
   }
 
   handleAdd = async () => {
     const obj = { title: "a", body: "b"};
-    const {data: response} = await axios.post(endPoint, obj);
+    const {data: response} = await http.post(config.apiEndpoint, obj);
     this.setState({posts: [response, ...this.state.posts]})
     console.log("Add Response: ", response);
   };
 
   handleUpdate = async post => {
     post.title = "Updated Example";
-    const {data} = await axios.put(endPoint + '/' + post.id, post) //Updating the whole thing
-   // axios.patch(endPoint = '/' + post.id, {title: post.title}) //Updating Specific Property
+    const {data} = await http.put(config.apiEndpoint + '/' + post.id, post) //Updating the whole thing
+   // http.patch(config.apiEndpoint = '/' + post.id, {title: post.title}) //Updating Specific Property
     console.log(data)
 
     const posts = this.state.posts;
@@ -42,27 +44,22 @@ class App extends Component {
     this.setState({posts})
 
     try{
-      await axios.delete(endPoint + '/' + post.id)
-      throw new Error("test error")
+      const promise = await http.delete(config.apiEndpoint + '/' + post.id);
+      console.log(promise)
     }
     catch(exception){
       if(exception.response && exception.response.status === 404)
         //Expected errors
-        alert("The post has already been deleted")
-      else{
-        //Unexpected error, network crash, bugs, db down?
-        console.log("logging error", exception)
-        alert("An error occured while deleting")
-      }
+        alert("The post doesn't exist or has already been deleted")
       this.setState({posts: prevPosts});
     }
-
-    console.log("Delete", post);
   };
 
   render() {
     return (
       <React.Fragment>
+        <ToastContainer />
+        
         <button className="btn btn-primary" onClick={this.handleAdd}>
           Add
         </button>
